@@ -34,10 +34,10 @@ const loginUser = async function (req, res) {
   let token = jwt.sign(
     {
       userId: user._id.toString(),
-      batch: "thorium",
+      batch: "plutonium",
       organisation: "FunctionUp",
     },
-    "functionup-plutonium-very-very-secret-key"
+    "functionup-plutonium-very-very-secret-key" //secret key which one is secure our token
   );
   res.setHeader("x-auth-token", token);
   res.send({ status: true, token: token });
@@ -48,7 +48,7 @@ const getUserData = async function (req, res) {
   if (!token) token = req.headers["x-auth-token"];
 
   //If no token is present in the request header return error. This means the user is not logged in.
-  if (!token) return res.send({ status: false, msg: "token must be present" });
+  if (!token) return res.send({ status: false, msg: "token must be needed" });
 
   console.log(token);
 
@@ -92,7 +92,14 @@ const updateUser = async function (req, res) {
   res.send({ status: updatedUser, data: updatedUser });
 };
 
+const deleteOne =async function (req,res){
+  let userId =req.params.userId;
+  let deleteOne = await userModel.findByIdAndUpdate({_id:userId},{$set:{isDeleted:true}},{new:true})
+  return res.send ({msg:deleteOne})
+}
+
 module.exports.createUser = createUser;
 module.exports.getUserData = getUserData;
 module.exports.updateUser = updateUser;
 module.exports.loginUser = loginUser;
+module.exports.deleteOne = deleteOne;
