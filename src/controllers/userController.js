@@ -2,88 +2,117 @@ const JWT = require("jsonwebtoken");
 const userModel = require("../models/userModel");
 
 
- // Read all the comments multiple times to understand why we are doing what we are doing in login api and getUserData api
+// Read all the comments multiple times to understand why we are doing what we are doing in login api and getUserData api
 //create
 const createUser = async function (abc, xyz) {
-  //You can name the req, res objects anything.
-  //but the first parameter is always the request 
-  //the second parameter is always the response
-  let data = abc.body;
-  let savedData = await userModel.create(data);
-  xyz.send({ msg: savedData });
+
+  try {
+
+    //You can name the req, res objects anything.
+    //but the first parameter is always the request 
+    //the second parameter is always the response
+    let data = abc.body;
+    let savedData = await userModel.create(data);
+    xyz.send({ msg: savedData });
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+
 };
 //Login-User(Post-API)
 const loginUser = async function (req, res) {
-  let userName = req.body.emailId;
-  let password = req.body.password;
 
-  let user = await userModel.findOne({ emailId: userName, password: password });
-  if (!user)
-    return res.send({ status: false, msg: "username or the password is not corerct", });
+  try {
+    let userName = req.body.emailId;
+    let password = req.body.password;
 
-  // Once the login is successful, create the jwt token with sign function
-  // Sign function has 2 inputs:
-  // Input 1 is the payload or the object containing data to be set in token
-  // The decision about what data to put in token depends on the business requirement
-  // Input 2 is the secret (This is basically a fixed value only set at the server. This value should be hard to guess)
-  // The same secret will be used to decode tokens 
-  let token = JWT.sign(                       //Generation for Token
-    {
-      userId: user._id.toString(),
-      batch: "plutonium",
-      organisation: "FunctionUp",
-    },
-    "functionup-plutonium-very-very-secret-key"
-  );
-  res.setHeader("x-auth-token", token);
-  res.send({ status: true, token: token });
+    let user = await userModel.findOne({ emailId: userName, password: password });
+    if (!user)
+      return res.status(401).send({ status: false, msg: "username or the password is not corerct", });
+
+    // Once the login is successful, create the jwt token with sign function
+    // Sign function has 2 inputs:
+    // Input 1 is the payload or the object containing data to be set in token
+    // The decision about what data to put in token depends on the business requirement
+    // Input 2 is the secret (This is basically a fixed value only set at the server. This value should be hard to guess)
+    // The same secret will
+    let token = JWT.sign({
+        userId: user._id.toString(),
+        batch: "plutonium",
+        organisation: "FunctionUp",
+      },
+      "functionup-plutonium-very-very-secret-key"
+    );
+    res.setHeader("x-auth-token", token);
+    res.status(200).send({ status: true, token: token });
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+
 };
 //GetUser Data(Get-API)
 const getUserData = async function (req, res) {
- let token = req.headers["x-auth-token"]
-  console.log(token);
 
-  // If a token is present then decode the token with verify function
-  // verify takes two inputs:
-  // Input 1 is the token to be decoded
-  // Input 2 is the same secret with which the token was generated
-  // Check the value of the decoded token yourself
+  try {
+    let token = req.headers["x-auth-token"]
+    console.log(token);
 
-  // Decoding requires the secret again. 
-  // A token can only be decoded successfully if the same secret was used to create(sign) that token.
-  // And because this token is only known to the server, it can be assumed that if a token is decoded at server then this token must have been issued by the same server in past.
+    // If a token is present then decode the token with verify function
+    // verify takes two inputs:
+    // Input 1 is the token to be decoded
+    // Input 2 is the same secret with which the token was generated
+    // Check the value of the decoded token yourself
 
-
-  let userId = req.params.userId;
-  let user = await userModel.findById(userId);
-  if (!user)
-    return res.send({ status: false, msg: "No such user exists." });
+    // Decoding requires the secret again. 
+    // A token can only be decoded successfully if the same secret was used to create(sign) that token.
+    // And because this token is only known to the server, it can be assumed that if a token is decoded at server then this token must have been issued by the same server in past.
 
 
-  res.send({ status: true, data: userDetails });
-  // Note: Try to see what happens if we change the secret while decoding the token
+    let userId = req.params.userId;
+    let users = await userModel.findById(userId);
+    if (!users)
+      return res.status(404).send({ status: false, msg: "No such user exists." });
+
+
+    res.status(200).send({ status: true, data: users });
+    // Note: Try to see what happens if we change the secret while decoding the token
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+
 };
 // UpdateUser-Document(Put-API)
 const updateUser = async function (req, res) {
-  // Do the same steps here:
-  // Check if the token is present
-  // Check if the token present is a valid token
-  // Return a different error message in both these cases
 
-  let userId = req.params.userId;
-  let user = await userModel.findById(userId);
-  //Return an error if no user with the given id exists in the db
-  if (!user) { return res.send("No such user exists"); }
+  try {
+    // Do the same steps here:
+    // Check if the token is present
+    // Check if the token present is a valid token
+    // Return a different error message in both these cases
 
-  let userData = req.body;
-  let updatedUserdata = await userModel.findOneAndUpdate({ _id: userId }, userData);
-  res.send({ status: updatedUserdata, data: updatedUserdata });
+    let userId = req.params.userId;
+    let user = await userModel.findById(userId);
+    //Return an error if no user with the given id exists in the db
+    if (!user) { return res.send("No such user exists"); }
+
+    let userData = req.body;
+    let updatedUserdata = await userModel.findOneAndUpdate({ _id: userId }, userData);
+    res.status(200).send({ status: updatedUserdata, data: updatedUserdata });
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
+
 };
 //Delete-User-Data(Delete-API)
 const deleteUser = async function (req, res) {
-  let userId = req.params.userId;
-  let deleteUser = await userModel.findByIdAndUpdate({ _id: userId }, { $set: { isDeleted: true } }, { new: true })
-  return res.send({ msg: deleteUser })
+
+  try {
+    let userId = req.params.userId;
+    let deleteUser = await userModel.findByIdAndUpdate({ _id: userId }, { $set: { isDeleted: true } }, { new: true })
+    return res.status(200).send({ msg: deleteUser })
+  } catch (error) {
+    res.status(500).send({ error: error.message })
+  }
 }
 
 
